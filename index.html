@@ -167,11 +167,8 @@ tfoot tr.average td {
       Get an API key
     </a>
   </div>
-</div>
 
-  <!-- PROMOTIONAL CONTENT -->
-  <div id="promoContent" class="card hint">
-    <strong>New Amber customers</strong>
+  <div class="mt-8"><strong>New Amber customers</strong></div>
   <div class="mt-8">Please consider using my invite code to support development and get $120 off your electricity bill:</div>
   <div class="row copy-row mt-6">
     <code id="copyText"><a href="https://mates.amber.com.au/Y5HFKB9C">Y5HFKB9C</a></code>
@@ -183,7 +180,7 @@ Charts are optional and rely on the Chart.js library, which is loaded only if en
 
 The code is open source under the MIT License and provided “as is”, without any warranty. Pull requests and suggestions are welcome <a href="https://github.com/dwinkler1/amber">(GitHub)</a>.
 </div>
-  </div>
+</div>
 
   <!-- CONTROLS -->
   <div class="card">
@@ -256,7 +253,6 @@ const API_BASE = 'https://api.amber.com.au/v1';
 const DAYS = 6;
 const nodes = {
   apiKey: $('apiKey'), rememberKey: $('rememberKey'), apiKeyHint: $('apiKeyHint'),
-  promoContent: $('promoContent'),
   loadSites: $('loadSites'), siteSelect: $('siteSelect'), fetchData: $('fetchData'),
   metricSelect: $('metricSelect'), windowValue: $('windowValue'), windowUnit: $('windowUnit'),
   enableChart: $('enableChart'),
@@ -322,7 +318,6 @@ const saved = KeyStore.get(); if(saved){ nodes.apiKey.value=saved; nodes.remembe
 function updateApiKeyHint(){ 
   const hasKey = nodes.apiKey.value.trim() !== '';
   nodes.apiKeyHint.classList.toggle('hidden', hasKey);
-  nodes.promoContent.classList.toggle('hidden', hasKey);
 }
 updateApiKeyHint();
 nodes.apiKey.addEventListener('input', () => {
