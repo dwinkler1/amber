@@ -260,6 +260,18 @@ const getTs = r => {
   }
   return r._ts;
 };
+function computeDurations(rows){
+  if(!rows.length) return [];
+  const times = rows.map(getTs);
+  const raw = times.map((t,i)=>{
+    if(i < times.length - 1) return Math.max(0, times[i+1]-t);
+    if(times.length > 1) return Math.max(0, times[i]-times[i-1]);
+    return 30*60000;
+  });
+  const positives = raw.filter(x=>x>0);
+  const fallback = positives.length ? Math.min(...positives) : 30*60000;
+  return raw.map(d => d>0 ? d : fallback);
+}
 const nodes = {
   apiKey: $('apiKey'), rememberKey: $('rememberKey'), apiKeyHint: $('apiKeyHint'),
   loadSites: $('loadSites'), siteSelect: $('siteSelect'), fetchData: $('fetchData'),
@@ -298,10 +310,7 @@ function renderAverageRow(footEl, avgPrice, avgRenew) {
 function weightedAverages(rows) {
   if (rows.length === 0) return null;
 
-  const times = rows.map(getTs);
-  const durs = times.map((t,i)=>
-    i < times.length-1 ? Math.max(0, times[i+1]-t) : 30*60000
-  );
+  const durs = computeDurations(rows);
 
   let sumMin = 0, sumP = 0, sumR = 0;
 
@@ -455,10 +464,8 @@ function renderChart(rows, win){
 function computeWindow(rows, minutes, field, mode){
   if(!rows.length) return null;
   const times = rows.map(getTs);
-  const durs = times.map((t,i)=> i < times.length - 1 ? times[i+1] - t : (times[i] - (times[i-1]||0) || 30*60000));
-  const positiveDurations = durs.filter(x=>x>0);
-  const minDur = positiveDurations.length ? Math.min(...positiveDurations) : 30*60000;
-  const targetMs = Math.max(minutes*60000, minDur);
+  const durs = computeDurations(rows);
+  const targetMs = minutes*60000;
   const better = mode === 'max' ? (a,b)=>a>b : (a,b)=>a<b;
   let best = null;
   for(let i=0;i<rows.length;i++){
