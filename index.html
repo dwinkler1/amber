@@ -514,11 +514,10 @@ async function fetchAndRender(){
     const firstFutureIdx = rows.findIndex(r => new Date(r.nemTime).getTime() >= now);
     if (firstFutureIdx > 0) {
       rows = rows.slice(firstFutureIdx - 1);
-    } else if (firstFutureIdx === 0) {
-      rows = rows.slice(0);
     } else if (firstFutureIdx === -1) {
       rows = [];
     }
+    // firstFutureIdx === 0 -> keep all rows (already sorted) starting at the first future interval
     nodes.raw.textContent = JSON.stringify(rows,null,2);
 
     const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
