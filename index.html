@@ -510,14 +510,15 @@ async function fetchAndRender(){
     if(!resp.ok) throw new Error('Prices fetch failed: ' + resp.status);
     let rows = await resp.json();
     const now = Date.now();
-    rows = (rows||[]).sort((a,b)=>new Date(a.nemTime)-new Date(b.nemTime));
-    const firstFutureIdx = rows.findIndex(r => new Date(r.nemTime).getTime() >= now);
+    rows = (rows||[]).map(r => ({ ...r, _ts: new Date(r.nemTime).getTime() })).sort((a,b)=>a._ts - b._ts);
+    const firstFutureIdx = rows.findIndex(r => r._ts >= now);
     if (firstFutureIdx > 0) {
       rows = rows.slice(firstFutureIdx - 1);
     } else if (firstFutureIdx === -1) {
       rows = [];
     }
-    // firstFutureIdx === 0 -> keep all rows (already sorted) starting at the first future interval
+    // firstFutureIdx === 0 -> keep the sorted future rows as-is (no past interval overlaps with now)
+    rows = rows.map(({ _ts, ...rest }) => rest);
     nodes.raw.textContent = JSON.stringify(rows,null,2);
 
     const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
