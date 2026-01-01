@@ -5,22 +5,95 @@
 <title>Price Window Explorer</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-html,body{margin:0;padding:0;background:#f6f7f9;overflow-x:hidden}
-*{box-sizing:border-box}
-html,body,input,select,button{
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  color:#0f172a;
+/* Base */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #f6f7f9;
+  overflow-x: hidden;
 }
-.page{width:90%;max-width:1200px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 24px max(16px,env(safe-area-inset-right));}
-.card{background:#fff;border-radius:10px;padding:18px;margin:16px 0;box-shadow:0 8px 24px rgba(2,6,23,.06)}
-.hint{background:#eef2ff;border-left:4px solid #6366f1}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-input,select,button{padding:8px 10px;font-size:14px;border:1px solid #e6e9ee;border-radius:6px;background:#fff}
-input[type=password]{flex:1;min-width:180px}input[type=number]{width:90px}
-button{cursor:pointer;background:#2563eb;color:#fff;border:none}
-button.secondary{background:#e5e7eb;color:#1f2937;border:1px solid #d1d5db}
-button[disabled]{opacity:.6;cursor:not-allowed}
-.copy-row code{background:#f1f5f9;padding:6px 8px;border-radius:6px;font-weight:600}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, input, select, button {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+
+/* Layout */
+.page {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px max(16px, env(safe-area-inset-left)) 24px max(16px, env(safe-area-inset-right));
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+  margin: 16px 0;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, .06);
+}
+
+.hint {
+  background: #eef2ff;
+  border-left: 4px solid #6366f1;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Form elements */
+input, select, button {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #e6e9ee;
+  border-radius: 6px;
+  background: #fff;
+}
+
+input[type=password] {
+  flex: 1;
+  min-width: 180px;
+}
+
+input[type=number] {
+  width: 90px;
+}
+
+button {
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+}
+
+button[disabled] {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.copy-row code {
+  background: #f1f5f9;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -36,7 +109,6 @@ th, td {
 
 tr.highlight td {
   background: #dbeafe;
-  font-weight: normal;
 }
 
 tfoot tr.separator td {
@@ -46,21 +118,23 @@ tfoot tr.separator td {
 tfoot tr.average td {
   font-weight: 600;
 }
+
+/* Chart */
 #chart {
   width: 100% !important;
   height: 100% !important;
   display: block;
 }
+
 .chart-wrap {
   height: 40vh;
   width: 100%;
   position: relative;
 }
+
+/* Utility */
 .hidden {
   display: none !important;
-}
-.card {
-  display: block;
 }
 </style>
 </head>
@@ -84,7 +158,7 @@ tfoot tr.average td {
     <code id="copyText"><a href="https://mates.amber.com.au/Y5HFKB9C">Y5HFKB9C</a></code>
     <button id="copyBtn" class="secondary" type="button">Copy</button>
   </div>
-  <divstyle="margin-top:8px">This tool runs entirely in your browser. Your API key is used only to communicate directly with Amber and fetch your data.
+  <div style="margin-top:8px">This tool runs entirely in your browser. Your API key is used only to communicate directly with Amber and fetch your data.
 
 Charts are optional and rely on the Chart.js library, which is loaded only if enabled.
 
