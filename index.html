@@ -67,6 +67,12 @@ tfoot tr.average td {
 .card {
   display: block;
 }
+
+.card--hint {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
 </style>
 </head>
 <body>
@@ -74,7 +80,7 @@ tfoot tr.average td {
 <div class="page">
 
   <!-- API KEY HINT -->
-<div id="apiKeyHint" class="card hint hidden">
+<div id="apiKeyHint" class="card hint card--hint hidden">
   <strong>API key required</strong>
   <div class="mt-6">Enter your Amber API key to load prices. If you activate "Remeber API key" the key is stored only in your browser's local storage. Please also store it in you password manager.</div>
   <div class="mt-6">
