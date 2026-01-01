@@ -528,7 +528,7 @@ async function fetchAndRender(){
       row._date = new Date(ts);
       return row;
     });
-    nodes.raw.textContent = JSON.stringify(rows.map(({ _ts, _date, ...rest }) => rest),null,2);
+    nodes.raw.textContent = JSON.stringify(rows, (key, value) => (key === '_ts' || key === '_date') ? undefined : value, 2);
 
     const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
     const mode = nodes.metricSelect.value==='renewables' ? 'max' : 'min';
@@ -539,7 +539,7 @@ async function fetchAndRender(){
     nodes.allTableBody.innerHTML = '';
     rows.forEach((r,i)=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${fmtDate(r._date || getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+      tr.innerHTML = `<td>${fmtDate(r._date)}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
       if(win && i>=win.start && i<=win.end) tr.classList.add('highlight');
       nodes.allTableBody.appendChild(tr);
     });
@@ -558,7 +558,7 @@ async function fetchAndRender(){
       nodes.minTableBody.innerHTML = '';
       rows.slice(win.start, win.end+1).forEach(r=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${fmtDate(r._date || getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+        tr.innerHTML = `<td>${fmtDate(r._date)}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
         nodes.minTableBody.appendChild(tr);
       });
 		const windowRows = rows.slice(win.start, win.end + 1);
