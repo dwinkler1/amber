@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Price Window Explorer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+html,body{margin:0;padding:0;background:#f6f7f9;overflow-x:hidden}
+*{box-sizing:border-box}
+html,body,input,select,button{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:#0f172a;
+}
+.page{width:90%;max-width:1200px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left)) 24px max(16px,env(safe-area-inset-right));}
+.card{background:#fff;border-radius:10px;padding:18px;margin:16px 0;box-shadow:0 8px 24px rgba(2,6,23,.06)}
+.hint{background:#eef2ff;border-left:4px solid #6366f1}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input,select,button{padding:8px 10px;font-size:14px;border:1px solid #e6e9ee;border-radius:6px;background:#fff}
+input[type=password]{flex:1;min-width:180px}input[type=number]{width:90px}
+button{cursor:pointer;background:#2563eb;color:#fff;border:none}
+button.secondary{background:#e5e7eb;color:#1f2937;border:1px solid #d1d5db}
+button[disabled]{opacity:.6;cursor:not-allowed}
+.copy-row code{background:#f1f5f9;padding:6px 8px;border-radius:6px;font-weight:600}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #eef2f6;
+  text-align: left;
+  font-weight: normal;
+}
+
+tr.highlight td {
+  background: #dbeafe;
+  font-weight: normal;
+}
+
+tfoot tr.separator td {
+  border-top: 2px solid #0f172a;
+}
+
+tfoot tr.average td {
+  font-weight: 600;
+}
+#chart {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.chart-wrap {
+  height: 40vh;
+  width: 100%;
+  position: relative;
+}
+.hidden {
+  display: none !important;
+}
+.card {
+  display: block;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- API KEY HINT -->
+<div id="apiKeyHint" class="card hint hidden">
+  <strong>API key required</strong>
+  <div style="margin-top:6px">Enter your Amber API key to load prices. If you activate "Remeber API key" the key is stored only in your browser's local storage. Please also store it in you password manager.</div>
+  <div style="margin-top:6px">
+    <a href="https://app.amber.com.au/developers/" target="_blank" rel="noopener">
+      Get an API key
+    </a>
+  </div>
+	<br>
+  <strong>New Amber customers</strong>
+  <div style="margin-top:8px">Please consider using my invite code to support development and get 120$ off your electricity bill:</div>
+  <div class="row copy-row" style="margin-top:6px">
+    <code id="copyText"><a href="https://mates.amber.com.au/Y5HFKB9C">Y5HFKB9C</a></code>
+    <button id="copyBtn" class="secondary" type="button">Copy</button>
+  </div>
+  <divstyle="margin-top:8px">This tool runs entirely in your browser. Your API key is used only to communicate directly with Amber and fetch your data.
+
+Charts are optional and rely on the Chart.js library, which is loaded only if enabled.
+
+The code is open source under the MIT License and provided “as is”, without any warranty. Pull requests and suggestions are welcome.
+</div>
+
+  <!-- CONTROLS -->
+  <div class="card">
+    <div class="row">
+      <input id="apiKey" type="password" placeholder="API key">
+      <button id="loadSites">Enter API key</button>
+      <label class="row"><input type="checkbox" id="rememberKey">Remember API key</label>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <label>Site<select id="siteSelect" disabled></select></label>
+      <label>Metric
+        <select id="metricSelect">
+          <option value="price">Price (min)</option>
+          <option value="renewables">Renewables (max)</option>
+        </select>
+      </label>
+      <label>Window<input id="windowValue" type="number" value="2" min="1"></label>
+      <select id="windowUnit">
+        <option value="minutes">minutes</option>
+        <option value="hours" selected>hours</option>
+      </select>
+      <label class="row"><input type="checkbox" id="enableChart">Show chart</label>
+      <button id="fetchData" disabled>Reload</button>
+    </div>
+  </div>
+
+  <!-- SELECTED WINDOW -->
+  <div id="minTableCard" class="card hidden">
+    <strong>Best Window</strong>
+    <div id="windowMeta" class="meta" style="margin-top:6px"></div>
+    <table style="margin-top:8px">
+      <thead><tr><th>Time</th><th>c/kWh</th><th>Renewables (%)</th></tr></thead>
+      <tbody id="minTableBody"></tbody>
+		<tfoot id="minTableFoot"></tfoot>
+    </table>
+  </div>
+
+  <!-- CHART -->
+  <div id="chartCard" class="card hidden">
+    <strong>Predicted Price & Renewables</strong>
+    <div class="chart-wrap" style="margin-top:8px">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ALL VALUES -->
+  <div id="allTableCard" class="card hidden">
+    <strong>Predicted Price & Renewables</strong>
+    <table style="margin-top:8px">
+      <thead><tr><th>Time</th><th>c/kWh</th><th>Renewables (%)</th></tr></thead>
+      <tbody id="allTableBody"></tbody>
+		<tfoot id="allTableFoot"></tfoot>
+    </table>
+  </div>
+
+  <!-- RAW -->
+  <div class="card">
+    <div class="toggle" id="toggleRaw">▶ API Response</div>
+    <pre id="raw" class="hidden">Please enter an API key</pre>
+  </div>
+
+  <div class="meta" style="text-align:center;margin-top:16px">© 2026 Daniel Winkler · MIT License</div>
+</div>
+
+<script>
+/* helpers & state */
+const $ = id => document.getElementById(id);
+const API_BASE = 'https://api.amber.com.au/v1';
+const DAYS = 6;
+const nodes = {
+  apiKey: $('apiKey'), rememberKey: $('rememberKey'), apiKeyHint: $('apiKeyHint'),
+  loadSites: $('loadSites'), siteSelect: $('siteSelect'), fetchData: $('fetchData'),
+  metricSelect: $('metricSelect'), windowValue: $('windowValue'), windowUnit: $('windowUnit'),
+  enableChart: $('enableChart'),
+  minTableCard: $('minTableCard'), minTableBody: $('minTableBody'), windowMeta: $('windowMeta'),
+  allTableCard: $('allTableCard'), allTableBody: $('allTableBody'),
+  chartCard: $('chartCard'), chartCanvas: $('chart'),
+  raw: $('raw'), toggleRaw: $('toggleRaw'),
+  copyBtn: $('copyBtn'), copyText: $('copyText')
+};
+const round3 = n => Number.isFinite(+n) ? (+n).toFixed(3) : '—';
+const fmtDate = t => new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+const isoDate = d => d.toISOString().slice(0,10);
+function renderAverageRow(footEl, avgPrice, avgRenew) {
+  footEl.innerHTML = '';
+
+  const sep = document.createElement('tr');
+  sep.className = 'separator';
+  sep.innerHTML = `<td colspan="3"></td>`;
+
+  const avg = document.createElement('tr');
+  avg.className = 'average';
+  avg.innerHTML = `
+    <td>Average</td>
+    <td>${round3(avgPrice)}</td>
+    <td>${round3(avgRenew)}</td>
+  `;
+
+  footEl.appendChild(sep);
+  footEl.appendChild(avg);
+}
+function weightedAverages(rows) {
+  if (rows.length === 0) return null;
+
+  const times = rows.map(r => new Date(r.nemTime).getTime());
+  const durs = times.map((t,i)=>
+    i < times.length-1 ? Math.max(0, times[i+1]-t) : 30*60000
+  );
+
+  let sumMin = 0, sumP = 0, sumR = 0;
+
+  rows.forEach((r,i)=>{
+    const minutes = durs[i] / 60000;
+    sumMin += minutes;
+    sumP += Number(r.perKwh||0) * minutes;
+    sumR += Number(r.renewables||0) * minutes;
+  });
+
+  return {
+    avgPrice: sumP / sumMin,
+    avgRenew: sumR / sumMin
+  };
+}
+function showError(message) {
+  nodes.raw.textContent = message;
+  nodes.raw.classList.remove('hidden');
+  nodes.toggleRaw.textContent = '▼ API Response';
+}
+
+function debounce(fn, delay=400){ let t; return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),delay);} }
+
+const KeyStore = { get:()=>localStorage.getItem('apiKey'), set:v=>localStorage.setItem('apiKey',v), remove:()=>localStorage.removeItem('apiKey') };
+const saved = KeyStore.get(); if(saved){ nodes.apiKey.value=saved; nodes.rememberKey.checked=true; }
+function updateApiKeyHint(){ nodes.apiKeyHint.classList.toggle('hidden', nodes.apiKey.value.trim() !== ''); }
+updateApiKeyHint();
+nodes.apiKey.addEventListener('input', () => {
+  updateApiKeyHint();
+
+  /* Reset derived UI */
+
+  // Hide raw output
+  nodes.raw.classList.add('hidden');
+  nodes.raw.textContent = '';
+  nodes.toggleRaw.textContent = '▶ API Response';
+
+  // Hide data cards
+  nodes.minTableCard.classList.add('hidden');
+  nodes.allTableCard.classList.add('hidden');
+  nodes.chartCard.classList.add('hidden');
+
+  // Clear table contents
+  nodes.minTableBody.innerHTML = '';
+  nodes.allTableBody.innerHTML = '';
+
+  // Disable site selector and reload button
+  nodes.siteSelect.innerHTML = '';
+  nodes.siteSelect.disabled = true;
+  nodes.fetchData.disabled = true;
+
+  // Destroy chart if it exists
+  if (typeof chart !== 'undefined' && chart) {
+    chart.destroy();
+    chart = null;
+  }
+
+  //  Handle remembered key 
+  if (nodes.rememberKey.checked) {
+    const k = nodes.apiKey.value.trim();
+    k ? KeyStore.set(k) : KeyStore.remove();
+  }
+});
+nodes.rememberKey.addEventListener('change', ()=>{ if(nodes.rememberKey.checked && nodes.apiKey.value.trim()) KeyStore.set(nodes.apiKey.value.trim()); if(!nodes.rememberKey.checked) KeyStore.remove();});
+
+async function copyToClipboard(text){
+  if(navigator.clipboard && window.isSecureContext){ try{ await navigator.clipboard.writeText(text); return true; }catch{} }
+  const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+  const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
+}
+if(nodes.copyBtn){
+  const orig = nodes.copyBtn.textContent;
+  nodes.copyBtn.onclick = async ()=>{
+    if(await copyToClipboard(nodes.copyText.textContent)){
+      nodes.copyBtn.textContent='✓ Copied'; nodes.copyBtn.disabled=true;
+      setTimeout(()=>{ nodes.copyBtn.textContent=orig; nodes.copyBtn.disabled=false; }, 1200);
+    }
+  };
+}
+
+let chartLoaded=false, chart=null;
+async function loadChartJs(){
+  if(chartLoaded) return;
+  await new Promise((res,rej)=>{
+    const s1=document.createElement('script'); s1.src='https://cdn.jsdelivr.net/npm/chart.js';
+    s1.onload = ()=>{
+      const s2=document.createElement('script'); s2.src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns';
+      s2.onload = ()=>{ chartLoaded=true; res(); };
+      s2.onerror = (e)=>{ console.error('Chart adapter failed',e); rej(e); };
+      document.head.appendChild(s2);
+    };
+    s1.onerror = (e)=>{ console.error('Chart.js failed to load',e); rej(e); };
+    document.head.appendChild(s1);
+  });
+}
+
+const windowHighlightPlugin = {
+  id: 'windowHighlight',
+  beforeDraw(chart,args,opts){
+    if(!opts || opts.start == null || opts.end == null) return;
+    const times = opts.times;
+    if(!times || !times.length) return;
+    const x = chart.scales.x;
+    const startIdx = opts.start;
+    const endIdx = opts.end;
+    const startTime = times[startIdx];
+    // compute endTime robustly (fallback to 30min if no previous interval)
+    const prevInterval = (endIdx > 0) ? (times[endIdx] - times[endIdx - 1]) : (30*60000);
+    const endTime = (endIdx < times.length - 1) ? times[endIdx + 1] : (times[endIdx] + (Number.isFinite(prevInterval) && prevInterval>0 ? prevInterval : 30*60000));
+    const xStart = x.getPixelForValue(startTime);
+    const xEnd = x.getPixelForValue(endTime);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(219,234,254,0.35)';
+    ctx.fillRect(xStart, chart.chartArea.top, xEnd - xStart, chart.chartArea.bottom - chart.chartArea.top);
+    ctx.restore();
+  }
+};
+
+function renderChart(rows, win){
+  if(chart){ chart.destroy(); chart = null; }
+  const times = rows.map(r => new Date(r.nemTime).getTime());
+  chart = new Chart(nodes.chartCanvas, {
+    type: 'line',
+    plugins: [windowHighlightPlugin],
+    data: {
+      datasets: [
+        { label: 'Price (c/kWh)', data: rows.map(r => ({ x: new Date(r.nemTime), y: r.perKwh })), yAxisID: 'yP', borderWidth:2, pointRadius:2, tension:0.15 },
+        { label: 'Renewables (%)', data: rows.map(r => ({ x: new Date(r.nemTime), y: r.renewables })), yAxisID: 'yR', borderWidth:2, pointRadius:2, tension:0.15 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        windowHighlight: win ? { start: win.start, end: win.end, times } : {}
+      },
+      scales: {
+        x: { type: 'time', time: { unit: 'hour' } },
+        yP: { position: 'left', title: { display: true, text: 'c / kWh' } },
+        yR: { position: 'right', title: { display: true, text: 'Renewables (%)' }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
+function computeWindow(rows, minutes, field, mode){
+  if(!rows.length) return null;
+  const times = rows.map(r=>new Date(r.nemTime).getTime());
+  const durs = times.map((t,i)=> i < times.length - 1 ? times[i+1] - t : (times[i] - (times[i-1]||0) || 30*60000));
+  const positiveDurations = durs.filter(x=>x>0);
+  const minDur = positiveDurations.length ? Math.min(...positiveDurations) : 30*60000;
+  const targetMs = Math.max(minutes*60000, minDur);
+  const better = mode === 'max' ? (a,b)=>a>b : (a,b)=>a<b;
+  let best = null;
+  for(let i=0;i<rows.length;i++){
+    let elapsed=0, weighted=0, j=i;
+    while(j<rows.length && elapsed < targetMs){
+      const val = Number(rows[j][field]);
+      if(!Number.isFinite(val)) break;
+      const durMin = durs[j]/60000;
+      weighted += val * durMin;
+      elapsed += durs[j];
+      j++;
+    }
+    if(elapsed < targetMs) continue;
+    const avg = weighted / (elapsed/60000);
+    if(!best || better(avg,best.avg)) best = { start: i, end: j-1, startTimeMs: times[i], endTimeMs: times[j-1] + durs[j-1], covered: elapsed/60000, avg };
+  }
+  return best;
+}
+
+/* load sites */
+nodes.loadSites.onclick = async ()=>{
+  const key = nodes.apiKey.value.trim();
+  if(!key) return;
+  try {
+  const r = await fetch(`${API_BASE}/sites`, {
+    headers:{ Authorization:`Bearer ${key}` }
+  });
+
+    if (r.status === 403) {
+      showError(
+      'Access denied (403).\n\n' +
+        'Your API key is invalid, expired, or does not have access to this account.'
+      );
+      return;
+    }
+
+    if (!r.ok) {
+      throw new Error(`Failed to load sites (HTTP ${r.status})`);
+  	 }
+    const sites = await r.json();
+    const sel = nodes.siteSelect;
+    sel.innerHTML = '<option value="">Select…</option>';
+    (sites||[]).forEach(s=>{
+      const o = document.createElement('option'); o.value = s.id; o.textContent = s.nmi || s.id; sel.appendChild(o);
+    });
+    sel.disabled = false;
+    if(sel.options.length > 1){ sel.selectedIndex = 1; nodes.fetchData.disabled = false; debouncedFetch(); }
+  } catch(e){ console.error(e); alert(String(e)); }
+};
+
+/* fetch & render */
+async function fetchAndRender(){
+  const key = nodes.apiKey.value.trim();
+  const site = nodes.siteSelect.value;
+  if(!key || !site) return;
+  try {
+    const today = new Date();
+    const start = isoDate(today);
+    const end = isoDate(new Date(today.getTime() + DAYS*86400000));
+    const resp = await fetch(`${API_BASE}/sites/${encodeURIComponent(site)}/prices?startDate=${start}&endDate=${end}`, { headers:{ Authorization:`Bearer ${key}` }});
+    if(!resp.ok) throw new Error('Prices fetch failed: ' + resp.status);
+    let rows = await resp.json();
+    const now = Date.now();
+    rows = (rows||[]).filter(r => new Date(r.nemTime).getTime() >= now).sort((a,b)=>new Date(a.nemTime)-new Date(b.nemTime));
+    nodes.raw.textContent = JSON.stringify(rows,null,2);
+
+    const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
+    const mode = nodes.metricSelect.value==='renewables' ? 'max' : 'min';
+    const mins = Number(nodes.windowValue.value) * (nodes.windowUnit.value === 'hours' ? 60 : 1);
+
+    const win = computeWindow(rows, mins, metric, mode);
+
+    nodes.allTableBody.innerHTML = '';
+    rows.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${fmtDate(r.nemTime)}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+      if(win && i>=win.start && i<=win.end) tr.classList.add('highlight');
+      nodes.allTableBody.appendChild(tr);
+    });
+
+    const avAll = weightedAverages(rows); // or simpleAverages
+    if (avAll) {
+      renderAverageRow(
+        $('allTableFoot'),
+        avAll.avgPrice,
+        avAll.avgRenew
+      );
+    }
+    nodes.allTableCard.classList.toggle('hidden', rows.length===0);
+
+    if(win){
+      nodes.minTableBody.innerHTML = '';
+      rows.slice(win.start, win.end+1).forEach(r=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${fmtDate(r.nemTime)}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+        nodes.minTableBody.appendChild(tr);
+      });
+		const windowRows = rows.slice(win.start, win.end + 1);
+		const avWin = weightedAverages(windowRows); // or simpleAverages
+		if (avWin) {
+		  renderAverageRow(
+		    $('minTableFoot'),
+		    avWin.avgPrice,
+		    avWin.avgRenew
+		  );
+		}
+      nodes.windowMeta.innerHTML = `<b>Start:</b> ${fmtDate(win.startTimeMs)} &nbsp; <b>End:</b> ${fmtDate(win.endTimeMs)} &nbsp; <b>Covered:</b> ${win.covered.toFixed(1)} min`;
+      nodes.minTableCard.classList.remove('hidden');
+    } else {
+      nodes.minTableCard.classList.add('hidden');
+		$('minTableFoot').innerHTML = '';
+		$('allTableFoot').innerHTML = '';
+    }
+
+    if(nodes.enableChart.checked && rows.length){
+      nodes.chartCard.classList.remove('hidden');
+      await loadChartJs();
+      renderChart(rows, win);
+    } else {
+      nodes.chartCard.classList.add('hidden');
+      if(chart){ chart.destroy(); chart = null; }
+    }
+  } catch(e){
+    console.error(e);
+    alert(String(e));
+  }
+}
+
+const debouncedFetch = debounce(fetchAndRender, 400);
+
+/* listen */
+nodes.fetchData.onclick = fetchAndRender;
+nodes.siteSelect.addEventListener('change', debouncedFetch);
+nodes.metricSelect.addEventListener('change', debouncedFetch);
+nodes.windowUnit.addEventListener('change', debouncedFetch);
+nodes.windowValue.addEventListener('input', debouncedFetch);
+nodes.enableChart.addEventListener('change', debouncedFetch);
+
+nodes.toggleRaw.onclick = ()=>{
+  nodes.raw.classList.toggle('hidden');
+  nodes.toggleRaw.textContent = nodes.raw.classList.contains('hidden') ? '▶ API Response' : '▼ API Response';
+};
+</script>
+</body>
+</html>
