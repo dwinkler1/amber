@@ -136,6 +136,22 @@ tfoot tr.average td {
 .hidden {
   display: none !important;
 }
+
+.mt-6 {
+  margin-top: 6px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.text-center {
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -145,25 +161,29 @@ tfoot tr.average td {
   <!-- API KEY HINT -->
 <div id="apiKeyHint" class="card hint hidden">
   <strong>API key required</strong>
-  <div style="margin-top:6px">Enter your Amber API key to load prices. If you activate "Remeber API key" the key is stored only in your browser's local storage. Please also store it in you password manager.</div>
-  <div style="margin-top:6px">
+  <div class="mt-6">Enter your Amber API key to load prices. If you activate "Remeber API key" the key is stored only in your browser's local storage. Please also store it in you password manager.</div>
+  <div class="mt-6">
     <a href="https://app.amber.com.au/developers/" target="_blank" rel="noopener">
       Get an API key
     </a>
   </div>
-	<br>
-  <strong>New Amber customers</strong>
-  <div style="margin-top:8px">Please consider using my invite code to support development and get 120$ off your electricity bill:</div>
-  <div class="row copy-row" style="margin-top:6px">
+</div>
+
+  <!-- PROMOTIONAL CONTENT -->
+  <div id="promoContent" class="card hint">
+    <strong>New Amber customers</strong>
+  <div class="mt-8">Please consider using my invite code to support development and get 120$ off your electricity bill:</div>
+  <div class="row copy-row mt-6">
     <code id="copyText"><a href="https://mates.amber.com.au/Y5HFKB9C">Y5HFKB9C</a></code>
     <button id="copyBtn" class="secondary" type="button">Copy</button>
   </div>
-  <div style="margin-top:8px">This tool runs entirely in your browser. Your API key is used only to communicate directly with Amber and fetch your data.
+  <div class="mt-8">This tool runs entirely in your browser. Your API key is used only to communicate directly with Amber and fetch your data.
 
 Charts are optional and rely on the Chart.js library, which is loaded only if enabled.
 
 The code is open source under the MIT License and provided “as is”, without any warranty. Pull requests and suggestions are welcome <a href="https://github.com/dwinkler1/amber">(GitHub)</a>.
 </div>
+  </div>
 
   <!-- CONTROLS -->
   <div class="card">
@@ -173,7 +193,7 @@ The code is open source under the MIT License and provided “as is”, without 
       <label class="row"><input type="checkbox" id="rememberKey">Remember API key</label>
     </div>
 
-    <div class="row" style="margin-top:8px">
+    <div class="row mt-8">
       <label>Site<select id="siteSelect" disabled></select></label>
       <label>Metric
         <select id="metricSelect">
@@ -194,8 +214,8 @@ The code is open source under the MIT License and provided “as is”, without 
   <!-- SELECTED WINDOW -->
   <div id="minTableCard" class="card hidden">
     <strong>Best Window</strong>
-    <div id="windowMeta" class="meta" style="margin-top:6px"></div>
-    <table style="margin-top:8px">
+    <div id="windowMeta" class="meta mt-6"></div>
+    <table class="mt-8">
       <thead><tr><th>Time</th><th>c/kWh</th><th>Renewables (%)</th></tr></thead>
       <tbody id="minTableBody"></tbody>
 		<tfoot id="minTableFoot"></tfoot>
@@ -205,7 +225,7 @@ The code is open source under the MIT License and provided “as is”, without 
   <!-- CHART -->
   <div id="chartCard" class="card hidden">
     <strong>Predicted Price & Renewables</strong>
-    <div class="chart-wrap" style="margin-top:8px">
+    <div class="chart-wrap mt-8">
       <canvas id="chart"></canvas>
     </div>
   </div>
@@ -213,7 +233,7 @@ The code is open source under the MIT License and provided “as is”, without 
   <!-- ALL VALUES -->
   <div id="allTableCard" class="card hidden">
     <strong>Predicted Price & Renewables</strong>
-    <table style="margin-top:8px">
+    <table class="mt-8">
       <thead><tr><th>Time</th><th>c/kWh</th><th>Renewables (%)</th></tr></thead>
       <tbody id="allTableBody"></tbody>
 		<tfoot id="allTableFoot"></tfoot>
@@ -226,7 +246,7 @@ The code is open source under the MIT License and provided “as is”, without 
     <pre id="raw" class="hidden">Please enter an API key</pre>
   </div>
 
-  <div class="meta" style="text-align:center;margin-top:16px">© 2026 Daniel Winkler · MIT License</div>
+  <div class="meta text-center mt-16">© 2026 Daniel Winkler · MIT License</div>
 </div>
 
 <script>
@@ -236,6 +256,7 @@ const API_BASE = 'https://api.amber.com.au/v1';
 const DAYS = 6;
 const nodes = {
   apiKey: $('apiKey'), rememberKey: $('rememberKey'), apiKeyHint: $('apiKeyHint'),
+  promoContent: $('promoContent'),
   loadSites: $('loadSites'), siteSelect: $('siteSelect'), fetchData: $('fetchData'),
   metricSelect: $('metricSelect'), windowValue: $('windowValue'), windowUnit: $('windowUnit'),
   enableChart: $('enableChart'),
@@ -298,7 +319,11 @@ function debounce(fn, delay=400){ let t; return (...a)=>{clearTimeout(t);t=setTi
 
 const KeyStore = { get:()=>localStorage.getItem('apiKey'), set:v=>localStorage.setItem('apiKey',v), remove:()=>localStorage.removeItem('apiKey') };
 const saved = KeyStore.get(); if(saved){ nodes.apiKey.value=saved; nodes.rememberKey.checked=true; }
-function updateApiKeyHint(){ nodes.apiKeyHint.classList.toggle('hidden', nodes.apiKey.value.trim() !== ''); }
+function updateApiKeyHint(){ 
+  const hasKey = nodes.apiKey.value.trim() !== '';
+  nodes.apiKeyHint.classList.toggle('hidden', hasKey);
+  nodes.promoContent.classList.toggle('hidden', hasKey);
+}
 updateApiKeyHint();
 nodes.apiKey.addEventListener('input', () => {
   updateApiKeyHint();
