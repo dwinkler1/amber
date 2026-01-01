@@ -251,7 +251,15 @@ The code is open source under the MIT License and provided “as is”, without 
 const $ = id => document.getElementById(id);
 const API_BASE = 'https://api.amber.com.au/v1';
 const DAYS = 6;
-const getTs = r => r._ts ?? new Date(r.nemTime).getTime();
+const getTs = r => {
+  if (r._ts == null) {
+    r._ts = new Date(r.nemTime).getTime();
+  }
+  if (!r._date) {
+    r._date = new Date(r._ts);
+  }
+  return r._ts;
+};
 const nodes = {
   apiKey: $('apiKey'), rememberKey: $('rememberKey'), apiKeyHint: $('apiKeyHint'),
   loadSites: $('loadSites'), siteSelect: $('siteSelect'), fetchData: $('fetchData'),
@@ -528,6 +536,7 @@ async function fetchAndRender(){
       row._date = new Date(ts);
       return row;
     });
+    // hide cached helper fields in the raw API display
     nodes.raw.textContent = JSON.stringify(rows, (key, value) => (key === '_ts' || key === '_date') ? undefined : value, 2);
 
     const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
