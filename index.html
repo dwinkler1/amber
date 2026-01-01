@@ -415,14 +415,14 @@ const windowHighlightPlugin = {
 
 function renderChart(rows, win){
   if(chart){ chart.destroy(); chart = null; }
-  const times = rows.map(getTs);
+  const times = rows.map(r => r._ts ?? getTs(r));
   chart = new Chart(nodes.chartCanvas, {
     type: 'line',
     plugins: [windowHighlightPlugin],
     data: {
       datasets: [
-        { label: 'Price (c/kWh)', data: rows.map(r => ({ x: new Date(getTs(r)), y: r.perKwh })), yAxisID: 'yP', borderWidth:2, pointRadius:2, tension:0.15 },
-        { label: 'Renewables (%)', data: rows.map(r => ({ x: new Date(getTs(r)), y: r.renewables })), yAxisID: 'yR', borderWidth:2, pointRadius:2, tension:0.15 }
+        { label: 'Price (c/kWh)', data: rows.map(r => ({ x: new Date(r._ts ?? getTs(r)), y: r.perKwh })), yAxisID: 'yP', borderWidth:2, pointRadius:2, tension:0.15 },
+        { label: 'Renewables (%)', data: rows.map(r => ({ x: new Date(r._ts ?? getTs(r)), y: r.renewables })), yAxisID: 'yR', borderWidth:2, pointRadius:2, tension:0.15 }
       ]
     },
     options: {
