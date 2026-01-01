@@ -264,7 +264,10 @@ const nodes = {
   copyBtn: $('copyBtn'), copyText: $('copyText')
 };
 const round3 = n => Number.isFinite(+n) ? (+n).toFixed(3) : '—';
-const fmtDate = t => new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+const fmtDate = t => {
+  const d = t instanceof Date ? t : new Date(t);
+  return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+};
 const isoDate = d => d.toISOString().slice(0,10);
 function renderAverageRow(footEl, avgPrice, avgRenew) {
   footEl.innerHTML = '';
@@ -421,8 +424,8 @@ function renderChart(rows, win){
     plugins: [windowHighlightPlugin],
     data: {
       datasets: [
-        { label: 'Price (c/kWh)', data: rows.map(r => ({ x: new Date(getTs(r)), y: r.perKwh })), yAxisID: 'yP', borderWidth:2, pointRadius:2, tension:0.15 },
-        { label: 'Renewables (%)', data: rows.map(r => ({ x: new Date(getTs(r)), y: r.renewables })), yAxisID: 'yR', borderWidth:2, pointRadius:2, tension:0.15 }
+        { label: 'Price (c/kWh)', data: rows.map(r => ({ x: r._date, y: r.perKwh })), yAxisID: 'yP', borderWidth:2, pointRadius:2, tension:0.15 },
+        { label: 'Renewables (%)', data: rows.map(r => ({ x: r._date, y: r.renewables })), yAxisID: 'yR', borderWidth:2, pointRadius:2, tension:0.15 }
       ]
     },
     options: {
@@ -522,9 +525,10 @@ async function fetchAndRender(){
     // firstFutureIdx === 0 -> keep the sorted future rows as-is (no past interval overlaps with now)
     rows = kept.map(({ row, ts }) => {
       row._ts = ts;
+      row._date = new Date(ts);
       return row;
     });
-    nodes.raw.textContent = JSON.stringify(rows.map(({ _ts, ...rest }) => rest),null,2);
+    nodes.raw.textContent = JSON.stringify(rows.map(({ _ts, _date, ...rest }) => rest),null,2);
 
     const metric = nodes.metricSelect.value==='renewables' ? 'renewables' : 'perKwh';
     const mode = nodes.metricSelect.value==='renewables' ? 'max' : 'min';
@@ -535,7 +539,7 @@ async function fetchAndRender(){
     nodes.allTableBody.innerHTML = '';
     rows.forEach((r,i)=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${fmtDate(getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+      tr.innerHTML = `<td>${fmtDate(r._date || getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
       if(win && i>=win.start && i<=win.end) tr.classList.add('highlight');
       nodes.allTableBody.appendChild(tr);
     });
@@ -554,7 +558,7 @@ async function fetchAndRender(){
       nodes.minTableBody.innerHTML = '';
       rows.slice(win.start, win.end+1).forEach(r=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${fmtDate(getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
+        tr.innerHTML = `<td>${fmtDate(r._date || getTs(r))}</td><td>${round3(r.perKwh)}</td><td>${round3(r.renewables)}</td>`;
         nodes.minTableBody.appendChild(tr);
       });
 		const windowRows = rows.slice(win.start, win.end + 1);
